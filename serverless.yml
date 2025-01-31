@@ -1,0 +1,53 @@
+service: serverless-notes-api
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    TABLE_NAME: NotesTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/NotesTable"
+
+functions:
+  createNote:
+    handler: src/functions/createNote/handler.handler
+    events:
+      - http:
+          path: notes
+          method: post
+  listNotes:
+      handler: src/functions/listNotes/handler.handler
+      events:
+        - http:
+            path: notes
+            method: get
+  getNote:
+      handler: src/functions/getNote/handler.handler
+      events:
+        - http:
+            path: notes/{id}
+            method: get
+
+resources:
+  Resources:
+    NotesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: NotesTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+plugins:
+  - serverless-plugin-typescript
